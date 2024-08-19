@@ -2,10 +2,13 @@ import React from 'react'
 import { Image, ImageSourcePropType, StyleSheet } from 'react-native'
 
 type ImageViewerProps = {
-  imageSource: ImageSourcePropType | undefined
+  placeholderImageSource: ImageSourcePropType | undefined
+  selectedImage?: string | null
 }
 
-const ImageViewer = ({ imageSource }: ImageViewerProps) => {
+const ImageViewer = ({ placeholderImageSource, selectedImage }: ImageViewerProps) => {
+  const imageSource = selectedImage ? { uri: selectedImage } : placeholderImageSource
+
   return <Image source={imageSource} style={styles.image} />
 }
 

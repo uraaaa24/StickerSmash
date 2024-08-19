@@ -5,13 +5,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 type ButtonProps = {
   label: string
   isPrimary?: boolean
+  onPress?: () => void
 }
 
-const Button = ({ label, isPrimary }: ButtonProps) => {
+const Button = ({ label, isPrimary, onPress }: ButtonProps) => {
   if (isPrimary) {
     return (
       <View style={[styles.buttonContainer, { borderWidth: 4, borderColor: '#ffd33d', borderRadius: 18 }]}>
-        <Pressable style={[styles.button, { backgroundColor: '#fff' }]} onPress={() => alert('You pressed a button.')}>
+        <Pressable style={[styles.button, { backgroundColor: '#fff' }]} onPress={onPress}>
           <FontAwesome name="picture-o" size={18} color="#25292e" style={styles.buttonIcon} />
           <Text style={[styles.buttonLabel, { color: '#25292e' }]}>{label}</Text>
         </Pressable>
