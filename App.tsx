@@ -1,3 +1,6 @@
+import { useRef, useState } from 'react'
+
+import domtoimage from 'dom-to-image'
 import * as MediaLibrary from 'expo-media-library'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { captureRef } from 'react-native-view-shot'
@@ -11,8 +14,7 @@ import IconButton from '@/components/iconButton'
 import ImageViewer from '@/components/imageViewer'
 import * as ImagePicker from 'expo-image-picker'
 import { StatusBar } from 'expo-status-bar'
-import { useRef, useState } from 'react'
-import { ImageSourcePropType, StyleSheet, View } from 'react-native'
+import { Image, ImageSourcePropType, Platform, StyleSheet, View } from 'react-native'
 
 const PlaceholderImage = require('@/assets/images/background-image.png')
 
@@ -25,6 +27,7 @@ export default function App() {
   const [pickedEmoji, setPickedEmoji] = useState<ImageSourcePropType | undefined>(undefined)
 
   const imageRef = useRef<View>(null)
+  const webImageRef = useRef<HTMLDivElement>(null)
 
   if (status === null) {
     requestPermission()
@@ -54,18 +57,37 @@ export default function App() {
   }
 
   const onSaveImageAsync = async () => {
-    try {
-      const loadUri = await captureRef(imageRef, {
-        height: 440,
-        quality: 1
-      })
+    if (Platform.OS !== 'web') {
+      try {
+        const loadUri = await captureRef(imageRef, {
+          height: 440,
+          quality: 1
+        })
 
-      await MediaLibrary.saveToLibraryAsync(loadUri)
-      if (loadUri) {
-        alert('Image saved successfully!')
+        await MediaLibrary.saveToLibraryAsync(loadUri)
+        if (loadUri) {
+          alert('Image saved successfully!')
+        }
+      } catch (error) {
+        console.log('Error saving image', error)
       }
-    } catch (error) {
-      console.log('Error saving image', error)
+    } else {
+      try {
+        if (!webImageRef.current) return
+
+        const dataUrl = await domtoimage.toJpeg(webImageRef.current, {
+          quality: 0.95,
+          width: 320,
+          height: 440
+        })
+
+        let link = document.createElement('a')
+        link.download = 'sticker-smash.jpeg'
+        link.href = dataUrl
+        link.click()
+      } catch (error) {
+        console.log('Error saving image', error)
+      }
     }
   }
 
@@ -76,10 +98,19 @@ export default function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={styles.imageContainer}>
-        <View ref={imageRef} collapsable={false}>
-          <ImageViewer placeholderImageSource={PlaceholderImage} selectedImage={selectedImage} />
-          {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />}
-        </View>
+        {Platform.OS !== 'web' ? (
+          // ネイティブ環境用のView
+          <View ref={imageRef} collapsable={false}>
+            <ImageViewer placeholderImageSource={PlaceholderImage} selectedImage={selectedImage} />
+            {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />}
+          </View>
+        ) : (
+          // Web環境用のdiv
+          <div ref={webImageRef} style={{ position: 'relative' }}>
+            <Image source={selectedImage ? { uri: selectedImage } : PlaceholderImage} style={styles.image} />
+            {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji} />}
+          </div>
+        )}
       </View>
       {showAppOptions ? (
         <View style={styles.optionsContainer}>
